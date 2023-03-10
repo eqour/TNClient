@@ -1,41 +1,46 @@
-import React, {useEffect} from 'react';
-import {View, StyleSheet, Text} from 'react-native';
-import storage from '../util/Storage';
+import React, {useEffect, useState} from 'react';
+import {View, Text} from 'react-native';
+import {hello} from '../util/RestApiClient';
+import LoginView from './LoginView';
 
-function MainView({navigation}: any): JSX.Element {
-  useEffect(() => {
-    checkAuthentication();
+function MainView(): JSX.Element {
+  const [auth, setAuth] = useState({
+    email: null,
+    token: null,
   });
+  const [message, setMessage] = useState<string | null>('');
 
-  const checkAuthentication = () => {
-    if (storage().authentication == null) {
-      console.debug('auth is null');
-      navigation.navigate('Login', {callback: checkAuthentication});
-    } else {
-      console.debug(
-        'email: ' +
-          storage().authentication.email +
-          '; token: ' +
-          storage().authentication.token,
-      );
-    }
+  const hasAuthentication = () => {
+    return auth.email != null && auth.token != null;
   };
 
-  return (
-    <View style={styles.container}>
-      <Text style={styles.text}>Главный экран</Text>
-    </View>
-  );
-}
+  useEffect(() => {
+    if (hasAuthentication() && message === '') {
+      updateMessage();
+    }
+  });
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-  },
-  text: {
-    textAlign: 'center',
-  },
-});
+  const updateMessage = async () => {
+    const result = await hello(auth.token == null ? '' : auth.token);
+    setMessage(result);
+  };
+
+  const mainView = () => {
+    return (
+      <View>
+        <Text>Главный экран</Text>
+        <Text>Логин: {auth.email}</Text>
+        <Text>Токен: {auth.token}</Text>
+        <Text>Сообщение от сервера: {message}</Text>
+      </View>
+    );
+  };
+
+  const loginView = () => {
+    return <LoginView setAuth={setAuth} />;
+  };
+
+  return hasAuthentication() ? mainView() : loginView();
+}
 
 export default MainView;
