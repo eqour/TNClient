@@ -7,16 +7,15 @@ import {
   StyleSheet,
 } from 'react-native';
 import {BackHandler} from 'react-native';
-import Message from '../util/Message';
+import Message from '../constant/Message';
 import {
-  login,
-  LoginResultStatus,
-  requestCode,
-  RequestCodeResult,
+  LoginStatus,
+  RequestCodeStatus,
+  restApiClient,
 } from '../util/RestApiClient';
 import showToast from '../util/ToastHelper';
 
-function LoginView({setAuth}: any): JSX.Element {
+function LoginView({setEmail}: any): JSX.Element {
   enum LoginStage {
     EMAIL_INPUT,
     CODE_REQUEST,
@@ -75,16 +74,16 @@ function LoginView({setAuth}: any): JSX.Element {
 
   const handleSubmitEmail = async () => {
     setStage(LoginStage.CODE_REQUEST);
-    const result = await requestCode(textData.current.email);
-    switch (result) {
-      case RequestCodeResult.OK:
+    const status = await restApiClient().requestCode(textData.current.email);
+    switch (status) {
+      case RequestCodeStatus.OK:
         setStage(LoginStage.CODE_INPUT);
         break;
-      case RequestCodeResult.BAD_EMAIL:
+      case RequestCodeStatus.BAD_EMAIL:
         setStage(LoginStage.EMAIL_INPUT);
         showToast(Message.EMAIL_CODE_SEND_ERROR);
         break;
-      case RequestCodeResult.ERROR:
+      case RequestCodeStatus.ERROR:
         setStage(LoginStage.EMAIL_INPUT);
         showToast(Message.SERVER_ERROR);
         break;
@@ -117,19 +116,19 @@ function LoginView({setAuth}: any): JSX.Element {
   };
 
   const handleSubmitCode = async () => {
-    const result = await login(textData.current.email, textData.current.code);
-    switch (result.status) {
-      case LoginResultStatus.OK:
-        setAuth({
-          email: textData.current.email,
-          token: result.token,
-        });
+    const status = await restApiClient().login(
+      textData.current.email,
+      textData.current.code,
+    );
+    switch (status) {
+      case LoginStatus.OK:
+        setEmail(textData.current.email);
         break;
-      case LoginResultStatus.BAD_CODE:
+      case LoginStatus.BAD_CODE:
         setStage(LoginStage.CODE_INPUT);
         showToast(Message.INCORRECT_EMAIL_CODE_ERROR);
         break;
-      case LoginResultStatus.ERROR:
+      case LoginStatus.ERROR:
         setStage(LoginStage.CODE_INPUT);
         showToast(Message.SERVER_ERROR);
         break;
