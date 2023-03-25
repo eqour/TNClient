@@ -1,9 +1,10 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TouchableOpacity} from 'react-native';
+import {View, Text, TouchableOpacity, FlatList} from 'react-native';
 import Message from '../constant/Message';
 import CommunicationChannels from '../model/CommunicationChannels';
 import {restApiClient, SimpleStatus} from '../util/RestApiClient';
 import showToast from '../util/ToastHelper';
+import CCItem from './CCItem';
 import LoginView from './LoginView';
 
 function MainView(): JSX.Element {
@@ -45,6 +46,21 @@ function MainView(): JSX.Element {
     }
   };
 
+  const data = [
+    {
+      id: '0',
+      name: 'Вконтакте',
+      recipient: 'vk-id',
+      enabled: false,
+    },
+    {
+      id: '1',
+      name: 'Telegram',
+      recipient: 'telegram-id',
+      enabled: true,
+    },
+  ];
+
   const mainView = () => {
     return (
       <View>
@@ -55,6 +71,18 @@ function MainView(): JSX.Element {
         <TouchableOpacity onPress={() => setState(State.LOADING)}>
           <Text>Обновить</Text>
         </TouchableOpacity>
+        <FlatList
+          data={data}
+          renderItem={({item}) => (
+            <CCItem
+              name={item.name}
+              recipient={item.recipient}
+              enabled={item.enabled}
+            />
+          )}
+          keyExtractor={item => item.id}
+          ItemSeparatorComponent={() => <View style={{height: 8}} />}
+        />
       </View>
     );
   };
