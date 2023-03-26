@@ -1,17 +1,35 @@
 import React, {useEffect, useState} from 'react';
-import {View, Text, TouchableOpacity, FlatList} from 'react-native';
+import {
+  View,
+  SafeAreaView,
+  Text,
+  TouchableOpacity,
+  FlatList,
+  BackHandler,
+  ActivityIndicator,
+  StyleSheet,
+} from 'react-native';
 import Message from '../constant/Message';
 import CommunicationChannels from '../model/CommunicationChannels';
-import {restApiClient, SimpleStatus} from '../util/RestApiClient';
-import showToast from '../util/ToastHelper';
+import {
+  LoginStatus,
+  RequestCodeStatus,
+  restApiClient,
+  SimpleStatus,
+} from '../util/RestApiClient';
 import CCItem from './CCItem';
-import LoginView from './LoginView';
+import {
+  SubmitCodeView,
+  RequestCodeStatus as LoginRequestCodeStatus,
+  SubmitCodeStatus,
+} from './SubmitCodeView';
 
 function MainView(): JSX.Element {
   enum State {
     LOADING,
     LOADED,
     REQUIRE_AUTH,
+    NO_NETWORK_CONNECTION,
   }
 
   const [state, setState] = useState(State.LOADING);
@@ -40,8 +58,7 @@ function MainView(): JSX.Element {
         setState(State.REQUIRE_AUTH);
         break;
       case SimpleStatus.ERROR:
-        setState(State.LOADED);
-        showToast(Message.SERVER_ERROR);
+        setState(State.NO_NETWORK_CONNECTION);
         break;
     }
   };
@@ -61,9 +78,9 @@ function MainView(): JSX.Element {
     },
   ];
 
-  const mainView = () => {
+  const mainView = (): JSX.Element => {
     return (
-      <View>
+      <SafeAreaView>
         <Text>Главный экран</Text>
         <Text>Логин: {email}</Text>
         <Text>Токен: {restApiClient().hasToken() ? 'есть' : 'нет'}</Text>
@@ -81,17 +98,100 @@ function MainView(): JSX.Element {
             />
           )}
           keyExtractor={item => item.id}
-          ItemSeparatorComponent={() => <View style={{height: 8}} />}
+          ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
-      </View>
+      </SafeAreaView>
     );
   };
 
-  const loginView = () => {
-    return <LoginView setEmail={updateEmail} />;
+  const loginView = (): JSX.Element => {
+    return (
+      <SafeAreaView style={styles.centeringContainer}>
+        <SubmitCodeView
+          recipientPlaceholder={Message.PLACEHOLDER_EMAIL}
+          codePlaceholder={Message.PLACEHOLDER_EMAIL_CODE}
+          exitCallback={() => BackHandler.exitApp()}
+          requestCodeCallback={async recipient => {
+            const status = await restApiClient().requestCode(recipient);
+            switch (status) {
+              case RequestCodeStatus.OK:
+                return LoginRequestCodeStatus.OK;
+              case RequestCodeStatus.BAD_EMAIL:
+                return LoginRequestCodeStatus.SEND_ERROR;
+              case RequestCodeStatus.ERROR:
+              default:
+                return LoginRequestCodeStatus.ERROR;
+            }
+          }}
+          submitCodeCallback={async (recipient, code) => {
+            const status = await restApiClient().login(recipient, code);
+            switch (status) {
+              case LoginStatus.OK:
+                return SubmitCodeStatus.OK;
+              case LoginStatus.BAD_CODE:
+                return SubmitCodeStatus.BAD_CODE;
+              case LoginStatus.ERROR:
+              default:
+                return SubmitCodeStatus.ERROR;
+            }
+          }}
+          successCallback={updateEmail}
+        />
+      </SafeAreaView>
+    );
   };
 
-  return state === State.REQUIRE_AUTH ? loginView() : mainView();
+  const loadView = (): JSX.Element => {
+    return (
+      <SafeAreaView style={styles.centeringContainer}>
+        <ActivityIndicator size="large" />
+      </SafeAreaView>
+    );
+  };
+
+  const noNetworkView = (): JSX.Element => {
+    return (
+      <SafeAreaView style={[styles.centeringContainer, styles.networkView]}>
+        <Text>{Message.NO_NETWORK_CONNECTION}</Text>
+        <TouchableOpacity
+          style={styles.button}
+          onPress={() => setState(State.LOADING)}>
+          <Text>{Message.BUTTON_RECONNECT}</Text>
+        </TouchableOpacity>
+      </SafeAreaView>
+    );
+  };
+
+  const styles = StyleSheet.create({
+    separator: {
+      height: 8,
+    },
+    centeringContainer: {
+      flex: 1,
+      justifyContent: 'center',
+    },
+    networkView: {
+      gap: 16,
+      alignItems: 'center',
+    },
+    button: {
+      backgroundColor: 'lightskyblue',
+      padding: 10,
+      borderRadius: 10,
+      alignItems: 'center',
+      width: '50%',
+    },
+  });
+
+  if (state === State.LOADING) {
+    return loadView();
+  } else if (state === State.REQUIRE_AUTH) {
+    return loginView();
+  } else if (state === State.NO_NETWORK_CONNECTION) {
+    return noNetworkView();
+  } else {
+    return mainView();
+  }
 }
 
 export default MainView;

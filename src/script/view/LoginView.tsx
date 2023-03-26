@@ -81,11 +81,11 @@ function LoginView({setEmail}: any): JSX.Element {
         break;
       case RequestCodeStatus.BAD_EMAIL:
         setStage(LoginStage.EMAIL_INPUT);
-        showToast(Message.EMAIL_CODE_SEND_ERROR);
+        showToast(Message.CODE_SEND_ERROR);
         break;
       case RequestCodeStatus.ERROR:
         setStage(LoginStage.EMAIL_INPUT);
-        showToast(Message.SERVER_ERROR);
+        showToast(Message.TEXT_ERROR);
         break;
     }
   };
@@ -126,11 +126,11 @@ function LoginView({setEmail}: any): JSX.Element {
         break;
       case LoginStatus.BAD_CODE:
         setStage(LoginStage.CODE_INPUT);
-        showToast(Message.INCORRECT_EMAIL_CODE_ERROR);
+        showToast(Message.INCORRECT_CODE_ERROR);
         break;
       case LoginStatus.ERROR:
         setStage(LoginStage.CODE_INPUT);
-        showToast(Message.SERVER_ERROR);
+        showToast(Message.TEXT_ERROR);
         break;
     }
   };
