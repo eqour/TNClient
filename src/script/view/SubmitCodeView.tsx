@@ -140,7 +140,7 @@ function SubmitCodeView({
   const handleSubmitCodeStatus = (status: SubmitCodeStatus) => {
     switch (status) {
       case SubmitCodeStatus.OK:
-        successCallback(state.code);
+        successCallback(state.recipient);
         break;
       case SubmitCodeStatus.BAD_CODE:
         setStage(Stage.INPUT_CODE);

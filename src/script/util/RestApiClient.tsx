@@ -2,6 +2,16 @@ import CommunicationChannels from '../model/CommunicationChannels';
 
 const host: string = 'http://192.168.69.112:8085/api/v1/';
 
+function isBadAuthStatus(status: number): boolean {
+  return status === 401 || status === 403;
+}
+
+enum RequestMethod {
+  POST = 'POST',
+  GET = 'GET',
+  PUT = 'PUT',
+}
+
 enum RequestCodeStatus {
   OK,
   BAD_EMAIL,
@@ -10,7 +20,7 @@ enum RequestCodeStatus {
 
 async function requestCode(email: string): Promise<RequestCodeStatus> {
   try {
-    const response = await makeRequest('auth/code', {email: email}, '');
+    const response = await makeRequest('auth/code', {email: email});
     switch (response.status) {
       case 200:
         return RequestCodeStatus.OK;
@@ -42,11 +52,10 @@ enum LoginStatus {
 
 async function login(email: string, code: string): Promise<LoginResult> {
   try {
-    const response = await makeRequest(
-      'auth/login',
-      {email: email, code: code},
-      '',
-    );
+    const response = await makeRequest('auth/login', {
+      email: email,
+      code: code,
+    });
     if (response.status === 200) {
       const result = await response.json();
       return new LoginResult(result.token, LoginStatus.OK);
@@ -62,7 +71,12 @@ async function login(email: string, code: string): Promise<LoginResult> {
 
 async function hello(token: string): Promise<string> {
   try {
-    const response = await makeRequest('hello-world', null, token);
+    const response = await makeRequest(
+      'hello-world',
+      null,
+      RequestMethod.POST,
+      token,
+    );
     if (response.status === 200) {
       return await response.json();
     } else {
@@ -93,14 +107,19 @@ async function findAllChannels(
   token: string,
 ): Promise<SimpleResponse<CommunicationChannels | null, SimpleStatus>> {
   try {
-    const response = await makeRequest('communication-channels', null, token);
+    const response = await makeRequest(
+      'communication-channels',
+      null,
+      RequestMethod.POST,
+      token,
+    );
     if (response.status === 200) {
       const result = await response.json();
       return new SimpleResponse(
         result as CommunicationChannels,
         SimpleStatus.OK,
       );
-    } else if (response.status === 401 || response.status === 403) {
+    } else if (isBadAuthStatus(response.status)) {
       return new SimpleResponse(null, SimpleStatus.FORBIDDEN);
     } else {
       return new SimpleResponse(null, SimpleStatus.ERROR);
@@ -110,15 +129,68 @@ async function findAllChannels(
   }
 }
 
+async function requestChannelRecipientCode(
+  channelId: string,
+  recipient: string,
+  token: string,
+): Promise<SimpleStatus> {
+  try {
+    const response = await makeRequest(
+      'communication-channels/' + channelId + '/code',
+      {recipient: recipient},
+      RequestMethod.POST,
+      token,
+    );
+    if (response.status === 200) {
+      return SimpleStatus.OK;
+    } else if (isBadAuthStatus(response.status)) {
+      return SimpleStatus.FORBIDDEN;
+    } else {
+      return SimpleStatus.ERROR;
+    }
+  } catch (ignored) {
+    return SimpleStatus.ERROR;
+  }
+}
+
+async function updateChannelRecipient(
+  channelId: string,
+  recipient: string,
+  code: string,
+  token: string,
+): Promise<SimpleStatus> {
+  try {
+    const response = await makeRequest(
+      'communication-channels/' + channelId + '/id',
+      {recipient: recipient, code: code},
+      RequestMethod.PUT,
+      token,
+    );
+    if (response.status === 200) {
+      return SimpleStatus.OK;
+    } else if (isBadAuthStatus(response.status)) {
+      return SimpleStatus.FORBIDDEN;
+    } else {
+      return SimpleStatus.ERROR;
+    }
+  } catch (ignored) {
+    return SimpleStatus.ERROR;
+  }
+}
+
 async function makeRequest(
   url: string,
   body: any,
-  token: string,
+  method: string = RequestMethod.POST,
+  token: string = '',
 ): Promise<Response> {
+  console.debug(
+    'request: ' + url + ', ' + JSON.stringify(body) + ', token: ' + token,
+  );
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), 10000);
   const response = await fetch(host + url, {
-    method: 'POST',
+    method: method,
     headers: {
       'Content-Type': 'application/json',
       Authorization: 'Bearer ' + token,
@@ -170,6 +242,21 @@ class RestApiClient {
     SimpleResponse<CommunicationChannels | null, SimpleStatus>
   > {
     return findAllChannels(this.token);
+  }
+
+  async requestChannelRecipientCode(
+    channelId: string,
+    recipient: string,
+  ): Promise<SimpleStatus> {
+    return requestChannelRecipientCode(channelId, recipient, this.token);
+  }
+
+  async updateChannelRecipient(
+    channelId: string,
+    recipient: string,
+    code: string,
+  ): Promise<SimpleStatus> {
+    return updateChannelRecipient(channelId, recipient, code, this.token);
   }
 }
 

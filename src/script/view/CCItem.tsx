@@ -2,7 +2,29 @@ import React, {useState} from 'react';
 import {Text, TouchableOpacity, View, StyleSheet} from 'react-native';
 import {SvgXml} from 'react-native-svg';
 
-function CCItem({name, recipient, enabled, callback}: any): JSX.Element {
+type SetActiveCallback = (id: string, value: boolean) => void;
+type AddCallback = (id: string) => void;
+type EditCallback = (id: string) => void;
+
+interface CCItemProps {
+  id: string;
+  name: string;
+  recipient: string | null;
+  enabled: boolean;
+  setActiveCallback: SetActiveCallback;
+  addCallback: AddCallback;
+  editCallback: EditCallback;
+}
+
+function CCItem({
+  id,
+  name,
+  recipient,
+  enabled,
+  setActiveCallback,
+  addCallback,
+  editCallback,
+}: CCItemProps): JSX.Element {
   const [state, setState] = useState({
     name: name,
     recipient: recipient,
@@ -13,8 +35,20 @@ function CCItem({name, recipient, enabled, callback}: any): JSX.Element {
     const newState = {...state};
     newState.enabled = !newState.enabled;
     setState(newState);
-    if (callback != null) {
-      callback(enabled);
+    if (setActiveCallback != null) {
+      setActiveCallback(id, enabled);
+    }
+  };
+
+  const isEmpty = (): boolean => {
+    return state.recipient == null;
+  };
+
+  const handleChangeButtonClick = () => {
+    if (isEmpty()) {
+      addCallback(id);
+    } else {
+      editCallback(id);
     }
   };
 
@@ -53,6 +87,14 @@ function CCItem({name, recipient, enabled, callback}: any): JSX.Element {
     },
   });
 
+  const plusIcon = `
+    <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-plus" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  `;
+
   const editIcon = `
     <svg xmlns="http://www.w3.org/2000/svg" class="icon icon-tabler icon-tabler-edit" width="44" height="44" viewBox="0 0 24 24" stroke-width="1.5" stroke="#2c3e50" fill="none" stroke-linecap="round" stroke-linejoin="round">
       <path stroke="none" d="M0 0h24v24H0z" fill="none"/>
@@ -83,19 +125,22 @@ function CCItem({name, recipient, enabled, callback}: any): JSX.Element {
     <View style={styles.item}>
       <View style={[styles.panel, styles.panelLeft]}>
         <Text style={styles.channelName}>{state.name}</Text>
-        <Text>{state.recipient}</Text>
+        <Text>{isEmpty() ? '' : state.recipient}</Text>
       </View>
       <View style={styles.panel}>
-        <TouchableOpacity style={styles.editButton}>
+        <TouchableOpacity
+          style={styles.editButton}
+          onPress={handleChangeButtonClick}>
           <SvgXml
             style={styles.buttonIcon}
-            xml={editIcon}
+            xml={isEmpty() ? plusIcon : editIcon}
             width="70%"
             height="70%"
           />
         </TouchableOpacity>
         <TouchableOpacity
           onPress={switchEnabled}
+          disabled={isEmpty()}
           style={[
             styles.editButton,
             state.enabled ? {} : styles.buttonDisabled,
