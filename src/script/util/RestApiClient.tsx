@@ -1,4 +1,4 @@
-import CommunicationChannels from '../model/CommunicationChannels';
+import UserAccount from '../model/UserAccount';
 
 const host: string = 'http://192.168.69.112:8085/api/v1/';
 
@@ -103,22 +103,19 @@ class SimpleResponse<T, S> {
   }
 }
 
-async function findAllChannels(
+async function getUserAccount(
   token: string,
-): Promise<SimpleResponse<CommunicationChannels | null, SimpleStatus>> {
+): Promise<SimpleResponse<UserAccount | null, SimpleStatus>> {
   try {
     const response = await makeRequest(
-      'communication-channels',
+      'account',
       null,
-      RequestMethod.POST,
+      RequestMethod.GET,
       token,
     );
     if (response.status === 200) {
       const result = await response.json();
-      return new SimpleResponse(
-        result as CommunicationChannels,
-        SimpleStatus.OK,
-      );
+      return new SimpleResponse(result as UserAccount, SimpleStatus.OK);
     } else if (isBadAuthStatus(response.status)) {
       return new SimpleResponse(null, SimpleStatus.FORBIDDEN);
     } else {
@@ -164,6 +161,77 @@ async function updateChannelRecipient(
       'communication-channels/' + channelId + '/id',
       {recipient: recipient, code: code},
       RequestMethod.PUT,
+      token,
+    );
+    if (response.status === 200) {
+      return SimpleStatus.OK;
+    } else if (isBadAuthStatus(response.status)) {
+      return SimpleStatus.FORBIDDEN;
+    } else {
+      return SimpleStatus.ERROR;
+    }
+  } catch (ignored) {
+    return SimpleStatus.ERROR;
+  }
+}
+
+async function updateChannelActive(
+  channelId: string,
+  active: boolean,
+  token: string,
+): Promise<SimpleStatus> {
+  try {
+    const response = await makeRequest(
+      'communication-channels/' + channelId + '/active',
+      {active: active},
+      RequestMethod.PUT,
+      token,
+    );
+    if (response.status === 200) {
+      return SimpleStatus.OK;
+    } else if (isBadAuthStatus(response.status)) {
+      return SimpleStatus.FORBIDDEN;
+    } else {
+      return SimpleStatus.ERROR;
+    }
+  } catch (ignored) {
+    return SimpleStatus.ERROR;
+  }
+}
+
+async function getSubscriptionGroups(
+  token: string,
+): Promise<SimpleResponse<string[], SimpleStatus>> {
+  try {
+    const response = await makeRequest(
+      'subscriptions/group',
+      null,
+      RequestMethod.GET,
+      token,
+    );
+    if (response.status === 200) {
+      const result = await response.json();
+      return new SimpleResponse(result as string[], SimpleStatus.OK);
+    } else if (isBadAuthStatus(response.status)) {
+      return new SimpleResponse([], SimpleStatus.FORBIDDEN);
+    } else {
+      return new SimpleResponse([], SimpleStatus.ERROR);
+    }
+  } catch (ignored) {
+    return new SimpleResponse([], SimpleStatus.ERROR);
+  }
+}
+
+async function subscribeToNotification(
+  type: string,
+  name: string | null,
+  token: string,
+): Promise<SimpleStatus> {
+  try {
+    const response = await makeRequest(
+      'subscriptions/' + type,
+      {name: name},
+      RequestMethod.POST,
       token,
     );
     if (response.status === 200) {
@@ -238,10 +306,10 @@ class RestApiClient {
     return hello(this.token);
   }
 
-  async findAllChannels(): Promise<
-    SimpleResponse<CommunicationChannels | null, SimpleStatus>
+  async getUserAccount(): Promise<
+    SimpleResponse<UserAccount | null, SimpleStatus>
   > {
-    return findAllChannels(this.token);
+    return getUserAccount(this.token);
   }
 
   async requestChannelRecipientCode(
@@ -257,6 +325,26 @@ class RestApiClient {
     code: string,
   ): Promise<SimpleStatus> {
     return updateChannelRecipient(channelId, recipient, code, this.token);
+  }
+
+  async updateChannelActive(
+    channelId: string,
+    active: boolean,
+  ): Promise<SimpleStatus> {
+    return updateChannelActive(channelId, active, this.token);
+  }
+
+  async getSubscriptionGroups(): Promise<
+    SimpleResponse<string[], SimpleStatus>
+  > {
+    return getSubscriptionGroups(this.token);
+  }
+
+  async subscribeToNotifications(
+    type: string,
+    name: string | null,
+  ): Promise<SimpleStatus> {
+    return subscribeToNotification(type, name, this.token);
   }
 }
 

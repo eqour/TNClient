@@ -36,7 +36,7 @@ function CCItem({
     newState.enabled = !newState.enabled;
     setState(newState);
     if (setActiveCallback != null) {
-      setActiveCallback(id, enabled);
+      setActiveCallback(id, newState.enabled);
     }
   };
 

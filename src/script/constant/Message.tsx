@@ -9,6 +9,7 @@ enum Message {
   BUTTON_LOGIN = 'Войти',
   NO_NETWORK_CONNECTION = 'Отсутствует подключение к сети',
   BUTTON_RECONNECT = 'Обновить',
+  NO_SUBSCRIPTION = 'Нет подписки',
 }
 
 export default Message;
