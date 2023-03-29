@@ -286,6 +286,10 @@ class RestApiClient {
     this.token = '';
   }
 
+  clearToken(): void {
+    this.token = '';
+  }
+
   hasToken(): boolean {
     return this.token.length > 0;
   }

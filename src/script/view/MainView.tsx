@@ -28,6 +28,7 @@ import {
 } from './SubmitCodeView';
 
 function MainView(): JSX.Element {
+  const DEBUG = false;
   enum MainViewStage {
     LOADING,
     LOADED,
@@ -103,8 +104,10 @@ function MainView(): JSX.Element {
     const ccs = state.account?.channels;
     const result = [];
     if (ccs != null) {
-      result.push(getChannelData('vk', 'Вконтакте', ccs.vk));
-      result.push(getChannelData('telegram', 'Telegram', ccs.telegram));
+      result.push(getChannelData('vk', Message.TEXT_CC_VK, ccs.vk));
+      result.push(
+        getChannelData('telegram', Message.TEXT_CC_TELEGRAM, ccs.telegram),
+      );
     }
     return result;
   };
@@ -197,15 +200,9 @@ function MainView(): JSX.Element {
   const mainView = (): JSX.Element => {
     return (
       <SafeAreaView>
-        <Text>Главный экран</Text>
-        <Text>Логин: {state.email}</Text>
-        <Text>Токен: {restApiClient().hasToken() ? 'есть' : 'нет'}</Text>
-        <Text>Аккаунт: {JSON.stringify(state.account)}</Text>
-        <TouchableOpacity onPress={() => setStage(MainViewStage.LOADING)}>
-          <Text>Обновить</Text>
-        </TouchableOpacity>
+        {debugView()}
         <Text style={styles.sectionText}>
-          Подписка на изменения в расписании
+          {Message.TITLE_GROUP_SUBSCRIPTION}
         </Text>
         <View style={styles.paddingContainer}>
           <SelectList
@@ -217,7 +214,9 @@ function MainView(): JSX.Element {
             defaultOption={getSelectedGroup()}
           />
         </View>
-        <Text style={styles.sectionText}>Способы отправки оповещений</Text>
+        <Text style={styles.sectionText}>
+          {Message.TITLE_COMMUNICATION_CHANNELS}
+        </Text>
         <FlatList
           data={getChannelsArray()}
           extraData={state}
@@ -251,8 +250,41 @@ function MainView(): JSX.Element {
           keyExtractor={item => item.id}
           ItemSeparatorComponent={() => <View style={styles.separator} />}
         />
+        <View style={styles.bottomButtonContainer}>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => setStage(MainViewStage.LOADING)}>
+            <Text>{Message.BUTTON_UPDATE}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.button}
+            onPress={() => {
+              restApiClient().clearToken();
+              setStage(MainViewStage.REQUIRE_AUTH);
+            }}>
+            <Text>{Message.BUTTON_LOGOUT}</Text>
+          </TouchableOpacity>
+        </View>
       </SafeAreaView>
     );
+  };
+
+  const debugView = (): JSX.Element => {
+    if (DEBUG) {
+      return (
+        <View>
+          <Text>Главный экран</Text>
+          <Text>Логин: {state.email}</Text>
+          <Text>Токен: {restApiClient().hasToken() ? 'есть' : 'нет'}</Text>
+          <Text>Аккаунт: {JSON.stringify(state.account)}</Text>
+          <TouchableOpacity onPress={() => setStage(MainViewStage.LOADING)}>
+            <Text>Обновить</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    } else {
+      return <View />;
+    }
   };
 
   const loginView = (): JSX.Element => {
@@ -366,6 +398,12 @@ function MainView(): JSX.Element {
       flex: 1,
       justifyContent: 'center',
     },
+    bottomButtonContainer: {
+      marginTop: 16,
+      justifyContent: 'center',
+      flexDirection: 'row',
+      gap: 16,
+    },
     paddingContainer: {
       paddingLeft: '5%',
       paddingRight: '5%',
@@ -377,9 +415,10 @@ function MainView(): JSX.Element {
     button: {
       backgroundColor: 'lightskyblue',
       padding: 10,
+      paddingLeft: 24,
+      paddingRight: 24,
       borderRadius: 10,
       alignItems: 'center',
-      width: '50%',
     },
     sectionText: {
       fontSize: 16,
