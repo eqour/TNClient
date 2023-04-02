@@ -1,6 +1,6 @@
 import UserAccount from '../model/UserAccount';
 
-const host: string = 'http://192.168.69.112:8085/api/v1/';
+const host: string = 'http://194.67.206.117:8085/api/v1/';
 
 function isBadAuthStatus(status: number): boolean {
   return status === 401 || status === 403;
