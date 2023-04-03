@@ -209,9 +209,8 @@ function MainView(): JSX.Element {
             save="key"
             data={getGroups()}
             setSelected={handleSelectedGroupChanged}
-            boxStyles={styles.dropdownBox}
-            dropdownStyles={styles.dropdownBox}
             defaultOption={getSelectedGroup()}
+            searchPlaceholder={Message.PLACEHOLDER_SEARCH}
           />
         </View>
         <Text style={styles.sectionText}>
@@ -275,7 +274,6 @@ function MainView(): JSX.Element {
         <View>
           <Text>Главный экран</Text>
           <Text>Логин: {state.email}</Text>
-          <Text>Токен: {restApiClient().hasToken() ? 'есть' : 'нет'}</Text>
           <Text>Аккаунт: {JSON.stringify(state.account)}</Text>
           <TouchableOpacity onPress={() => setStage(MainViewStage.LOADING)}>
             <Text>Обновить</Text>
@@ -291,8 +289,10 @@ function MainView(): JSX.Element {
     return (
       <SafeAreaView style={styles.centeringContainer}>
         <SubmitCodeView
+          title={Message.TITLE_LOGIN}
+          submitCodeTitle={Message.TITLE_SUBMIT_CODE}
           recipientPlaceholder={Message.PLACEHOLDER_EMAIL}
-          codePlaceholder={Message.PLACEHOLDER_EMAIL_CODE}
+          codePlaceholder={Message.PLACEHOLDER_CONFIRMATION_CODE}
           exitCallback={() => BackHandler.exitApp()}
           requestCodeCallback={async recipient => {
             const status = await restApiClient().requestCode(recipient);
@@ -328,8 +328,18 @@ function MainView(): JSX.Element {
     return (
       <SafeAreaView style={styles.centeringContainer}>
         <SubmitCodeView
-          recipientPlaceholder={channelData.name}
-          codePlaceholder={Message.PLACEHOLDER_EMAIL_CODE}
+          title={
+            channelData.recipient === null
+              ? Message.TITLE_ADD_CHANNEL
+              : Message.TITLE_EDIT_CHANNEL
+          }
+          submitCodeTitle={Message.TITLE_SUBMIT_CODE}
+          recipientPlaceholder={
+            channelData.id === 'vk'
+              ? Message.PLACEHOLDER_VK_ID
+              : Message.PLACEHOLDER_TG_ID
+          }
+          codePlaceholder={Message.PLACEHOLDER_CONFIRMATION_CODE}
           exitCallback={() => setStage(MainViewStage.LOADED)}
           requestCodeCallback={async recipient => {
             const status = await restApiClient().requestChannelRecipientCode(
@@ -426,6 +436,7 @@ function MainView(): JSX.Element {
       textAlign: 'center',
       marginTop: 16,
       marginBottom: 16,
+      flexWrap: 'wrap',
     },
     dropdownBox: {
       borderRadius: 0,

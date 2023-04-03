@@ -1,4 +1,4 @@
-package com.tnclient;
+package ru.eqour.tnclient;
 
 import android.app.Application;
 import com.facebook.react.PackageList;

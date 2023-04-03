@@ -2,8 +2,8 @@ enum Message {
   TEXT_ERROR = 'Произошла ошибка, повторите попытку позже',
   CODE_SEND_ERROR = 'Не удалось отправить код',
   INCORRECT_CODE_ERROR = 'Некорректный код',
-  PLACEHOLDER_EMAIL_CODE = 'Код',
-  PLACEHOLDER_EMAIL = 'Электронная почта',
+  PLACEHOLDER_CONFIRMATION_CODE = 'Код подтверждения',
+  PLACEHOLDER_EMAIL = 'Адрес эл. почты',
   BUTTON_CONTINUE = 'Продолжить',
   BUTTON_BACK = 'Назад',
   BUTTON_LOGIN = 'Войти',
@@ -15,7 +15,14 @@ enum Message {
   TEXT_CC_VK = 'Вконтакте',
   TEXT_CC_TELEGRAM = 'Telegram',
   BUTTON_UPDATE = 'Обновить',
-  BUTTON_LOGOUT = 'Выйти',
+  BUTTON_LOGOUT = 'Выйти из системы',
+  TITLE_LOGIN = 'Вход',
+  TITLE_ADD_CHANNEL = 'Добавление способа отправки оповещений',
+  TITLE_EDIT_CHANNEL = 'Редактирование способа отправки оповещений',
+  TITLE_SUBMIT_CODE = 'На указанный адрес отправлен код подтверждения',
+  PLACEHOLDER_VK_ID = 'VK ID',
+  PLACEHOLDER_TG_ID = 'Telegram ID',
+  PLACEHOLDER_SEARCH = 'Поиск',
 }
 
 export default Message;

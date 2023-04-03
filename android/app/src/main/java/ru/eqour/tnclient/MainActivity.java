@@ -1,4 +1,4 @@
-package com.tnclient;
+package ru.eqour.tnclient;
 
 import com.facebook.react.ReactActivity;
 import com.facebook.react.ReactActivityDelegate;

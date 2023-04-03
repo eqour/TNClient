@@ -31,6 +31,8 @@ type SubmitCodeCallback = (
 type SuccessCallback = (recipient: string) => void;
 
 interface SubmitCodeViewProps {
+  title: string;
+  submitCodeTitle: string;
   recipientPlaceholder: string;
   codePlaceholder: string;
   exitCallback: ExitCallback;
@@ -40,6 +42,8 @@ interface SubmitCodeViewProps {
 }
 
 function SubmitCodeView({
+  title,
+  submitCodeTitle,
   recipientPlaceholder,
   codePlaceholder,
   exitCallback,
@@ -185,10 +189,21 @@ function SubmitCodeView({
     disabledButton: {
       backgroundColor: 'lightgray',
     },
+    titleText: {
+      fontSize: 16,
+      fontWeight: 'bold',
+      textAlign: 'center',
+      marginTop: 16,
+      marginBottom: 16,
+      flexWrap: 'wrap',
+    },
   });
 
   return (
     <View style={styles.form}>
+      <Text style={styles.titleText}>
+        {isInputRecipient() ? title : submitCodeTitle}
+      </Text>
       <TextInput
         editable={!isDisabled()}
         selectTextOnFocus={!isDisabled()}

@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserAccount from '../model/UserAccount';
 
 const host: string = 'http://194.67.206.117:8085/api/v1/';
@@ -280,18 +281,21 @@ function restApiClient(): RestApiClient {
 }
 
 class RestApiClient {
-  token: string;
+  async getToken(): Promise<string> {
+    const storageToken = await AsyncStorage.getItem('token');
+    return storageToken == null ? '' : storageToken;
+  }
 
-  constructor() {
-    this.token = '';
+  async setToken(token: string) {
+    AsyncStorage.setItem('token', token);
   }
 
   clearToken(): void {
-    this.token = '';
+    this.setToken('');
   }
 
-  hasToken(): boolean {
-    return this.token.length > 0;
+  async hasToken(): Promise<boolean> {
+    return (await this.getToken()).length > 0;
   }
 
   async requestCode(email: string): Promise<RequestCodeStatus> {
@@ -301,26 +305,30 @@ class RestApiClient {
   async login(email: string, code: string): Promise<LoginStatus> {
     const result = await login(email, code);
     if (result.status === LoginStatus.OK && result.token != null) {
-      this.token = result.token;
+      this.setToken(result.token);
     }
     return result.status;
   }
 
   async hello(): Promise<string> {
-    return hello(this.token);
+    return hello(await this.getToken());
   }
 
   async getUserAccount(): Promise<
     SimpleResponse<UserAccount | null, SimpleStatus>
   > {
-    return getUserAccount(this.token);
+    return getUserAccount(await this.getToken());
   }
 
   async requestChannelRecipientCode(
     channelId: string,
     recipient: string,
   ): Promise<SimpleStatus> {
-    return requestChannelRecipientCode(channelId, recipient, this.token);
+    return requestChannelRecipientCode(
+      channelId,
+      recipient,
+      await this.getToken(),
+    );
   }
 
   async updateChannelRecipient(
@@ -328,27 +336,32 @@ class RestApiClient {
     recipient: string,
     code: string,
   ): Promise<SimpleStatus> {
-    return updateChannelRecipient(channelId, recipient, code, this.token);
+    return updateChannelRecipient(
+      channelId,
+      recipient,
+      code,
+      await this.getToken(),
+    );
   }
 
   async updateChannelActive(
     channelId: string,
     active: boolean,
   ): Promise<SimpleStatus> {
-    return updateChannelActive(channelId, active, this.token);
+    return updateChannelActive(channelId, active, await this.getToken());
   }
 
   async getSubscriptionGroups(): Promise<
     SimpleResponse<string[], SimpleStatus>
   > {
-    return getSubscriptionGroups(this.token);
+    return getSubscriptionGroups(await this.getToken());
   }
 
   async subscribeToNotifications(
     type: string,
     name: string | null,
   ): Promise<SimpleStatus> {
-    return subscribeToNotification(type, name, this.token);
+    return subscribeToNotification(type, name, await this.getToken());
   }
 }
 

@@ -97,7 +97,7 @@ function LoginView({setEmail}: any): JSX.Element {
           editable={stage !== disablingState}
           selectTextOnFocus={stage !== disablingState}
           keyboardType="numeric"
-          placeholder={Message.PLACEHOLDER_EMAIL_CODE}
+          placeholder={Message.PLACEHOLDER_CONFIRMATION_CODE}
           style={styles.codeTextField}
           value={code}
           onChangeText={handleCodeInput}
