@@ -12,7 +12,7 @@ enum Message {
   NO_SUBSCRIPTION = 'Нет подписки',
   TITLE_GROUP_SUBSCRIPTION = 'Подписка на изменение расписания в группе',
   TITLE_COMMUNICATION_CHANNELS = 'Способы отправки оповещений',
-  TEXT_CC_VK = 'Вконтакте',
+  TEXT_CC_VK = 'ВКонтакте',
   TEXT_CC_TELEGRAM = 'Telegram',
   BUTTON_UPDATE = 'Обновить',
   BUTTON_LOGOUT = 'Выйти из системы',
@@ -23,6 +23,7 @@ enum Message {
   PLACEHOLDER_VK_ID = 'VK ID',
   PLACEHOLDER_TG_ID = 'Telegram ID',
   PLACEHOLDER_SEARCH = 'Поиск',
+  BUTTON_UNDERSTAND = 'Понятно',
 }
 
 export default Message;

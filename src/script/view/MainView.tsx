@@ -8,6 +8,7 @@ import {
   BackHandler,
   ActivityIndicator,
   StyleSheet,
+  Linking,
 } from 'react-native';
 import {SelectList} from 'react-native-dropdown-select-list';
 import Message from '../constant/Message';
@@ -26,6 +27,7 @@ import {
   RequestCodeStatus as RCodeStatus,
   SubmitCodeStatus,
 } from './SubmitCodeView';
+import IntroView from './IntroView';
 
 function MainView(): JSX.Element {
   const DEBUG = false;
@@ -327,57 +329,101 @@ function MainView(): JSX.Element {
   const editCCView = (channelData: CCData): JSX.Element => {
     return (
       <SafeAreaView style={styles.centeringContainer}>
-        <SubmitCodeView
-          title={
-            channelData.recipient === null
-              ? Message.TITLE_ADD_CHANNEL
-              : Message.TITLE_EDIT_CHANNEL
-          }
-          submitCodeTitle={Message.TITLE_SUBMIT_CODE}
-          recipientPlaceholder={
-            channelData.id === 'vk'
-              ? Message.PLACEHOLDER_VK_ID
-              : Message.PLACEHOLDER_TG_ID
-          }
-          codePlaceholder={Message.PLACEHOLDER_CONFIRMATION_CODE}
-          exitCallback={() => setStage(MainViewStage.LOADED)}
-          requestCodeCallback={async recipient => {
-            const status = await restApiClient().requestChannelRecipientCode(
-              channelData.id,
-              recipient,
-            );
-            switch (status) {
-              case SimpleStatus.OK:
-                return RCodeStatus.OK;
-              case SimpleStatus.FORBIDDEN:
-                setStage(MainViewStage.REQUIRE_AUTH);
-                return RCodeStatus.ERROR;
-              case SimpleStatus.ERROR:
-              default:
-                return RCodeStatus.ERROR;
+        <IntroView info={channelData.id === 'vk' ? vkIntro() : tgIntro()}>
+          <SubmitCodeView
+            title={
+              channelData.recipient === null
+                ? Message.TITLE_ADD_CHANNEL
+                : Message.TITLE_EDIT_CHANNEL
             }
-          }}
-          submitCodeCallback={async (recipient, code) => {
-            const status = await restApiClient().updateChannelRecipient(
-              channelData.id,
-              recipient,
-              code,
-            );
-            switch (status) {
-              case SimpleStatus.OK:
-                return SubmitCodeStatus.OK;
-              case SimpleStatus.FORBIDDEN:
-                return SubmitCodeStatus.BAD_CODE;
-              case SimpleStatus.ERROR:
-              default:
-                return SubmitCodeStatus.ERROR;
+            submitCodeTitle={Message.TITLE_SUBMIT_CODE}
+            recipientPlaceholder={
+              channelData.id === 'vk'
+                ? Message.PLACEHOLDER_VK_ID
+                : Message.PLACEHOLDER_TG_ID
             }
-          }}
-          successCallback={() => setStage(MainViewStage.LOADING)}
-        />
+            codePlaceholder={Message.PLACEHOLDER_CONFIRMATION_CODE}
+            exitCallback={() => setStage(MainViewStage.LOADED)}
+            requestCodeCallback={async recipient => {
+              const status = await restApiClient().requestChannelRecipientCode(
+                channelData.id,
+                recipient,
+              );
+              switch (status) {
+                case SimpleStatus.OK:
+                  return RCodeStatus.OK;
+                case SimpleStatus.FORBIDDEN:
+                  setStage(MainViewStage.REQUIRE_AUTH);
+                  return RCodeStatus.ERROR;
+                case SimpleStatus.ERROR:
+                default:
+                  return RCodeStatus.ERROR;
+              }
+            }}
+            submitCodeCallback={async (recipient, code) => {
+              const status = await restApiClient().updateChannelRecipient(
+                channelData.id,
+                recipient,
+                code,
+              );
+              switch (status) {
+                case SimpleStatus.OK:
+                  return SubmitCodeStatus.OK;
+                case SimpleStatus.FORBIDDEN:
+                  return SubmitCodeStatus.BAD_CODE;
+                case SimpleStatus.ERROR:
+                default:
+                  return SubmitCodeStatus.ERROR;
+              }
+            }}
+            successCallback={() => setStage(MainViewStage.LOADING)}
+          />
+        </IntroView>
       </SafeAreaView>
     );
   };
+
+  const vkIntro = (): JSX.Element => (
+    <View>
+      <Text style={styles.paragraph}>
+        Перед подключением оповещений ВКонтакте необходимо начать диалог с{' '}
+        <Text
+          style={styles.link}
+          onPress={() => Linking.openURL('https://vk.com/write-203759542')}>
+          ботом сообщества
+        </Text>
+        .
+      </Text>
+      <Text>
+        Также для настройки потребуется узнать свой VK ID. Его можно найти в
+        разделе Сервисы {'>'} Управление VK ID {'>'} Личные данные.
+      </Text>
+    </View>
+  );
+
+  const tgIntro = (): JSX.Element => (
+    <View>
+      <Text style={styles.paragraph}>
+        Перед подключением оповещений Telegram необходимо начать диалог с{' '}
+        <Text
+          style={styles.link}
+          onPress={() => Linking.openURL('https://t.me/ascor_bot')}>
+          ботом
+        </Text>
+        .
+      </Text>
+      <Text>
+        Также для настройки потребуется узнать свой Telegram ID. Его можно
+        получить у одного из ботов:{' '}
+        <Text
+          style={styles.link}
+          onPress={() => Linking.openURL('https://t.me/getidsbot')}>
+          GetIDs Bot
+        </Text>
+        .
+      </Text>
+    </View>
+  );
 
   const loadView = (): JSX.Element => {
     return (
@@ -401,6 +447,13 @@ function MainView(): JSX.Element {
   };
 
   const styles = StyleSheet.create({
+    paragraph: {
+      marginBottom: 10,
+      flexWrap: 'wrap',
+    },
+    link: {
+      color: '#0969DA',
+    },
     separator: {
       height: 8,
     },
