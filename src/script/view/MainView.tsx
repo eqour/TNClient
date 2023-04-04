@@ -5,7 +5,6 @@ import {
   Text,
   TouchableOpacity,
   FlatList,
-  BackHandler,
   ActivityIndicator,
   StyleSheet,
 } from 'react-native';
@@ -293,7 +292,7 @@ function MainView(): JSX.Element {
           submitCodeTitle={Message.TITLE_SUBMIT_CODE}
           recipientPlaceholder={Message.PLACEHOLDER_EMAIL}
           codePlaceholder={Message.PLACEHOLDER_CONFIRMATION_CODE}
-          exitCallback={() => BackHandler.exitApp()}
+          exitCallback={() => console.log('exit app')}
           requestCodeCallback={async recipient => {
             const status = await restApiClient().requestCode(recipient);
             switch (status) {
