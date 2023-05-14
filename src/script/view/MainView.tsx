@@ -10,7 +10,6 @@ import {
   StyleSheet,
   Linking,
 } from 'react-native';
-import {SelectList} from 'react-native-dropdown-select-list';
 import Message from '../constant/Message';
 import CommunicationChannel from '../model/CommunicationChannel';
 import UserAccount from '../model/UserAccount';
@@ -28,6 +27,7 @@ import {
   SubmitCodeStatus,
 } from './SubmitCodeView';
 import IntroView from './IntroView';
+import SubscriptionView from './SubscriptionView';
 
 function MainView(): JSX.Element {
   const DEBUG = false;
@@ -37,6 +37,7 @@ function MainView(): JSX.Element {
     REQUIRE_AUTH,
     NO_NETWORK_CONNECTION,
     EDIT_COMMUNICATION,
+    EDIT_SUBSCRIPTION,
   }
 
   interface StateData {
@@ -44,7 +45,9 @@ function MainView(): JSX.Element {
     email: string;
     account: UserAccount | null;
     editedChannel: string | null;
+    editedSubscription: string | null;
     groups: string[];
+    teachers: string[];
   }
 
   const [state, setState] = useState<StateData>({
@@ -52,7 +55,9 @@ function MainView(): JSX.Element {
     email: '',
     account: null,
     editedChannel: null,
+    editedSubscription: null,
     groups: [],
+    teachers: [],
   });
 
   const setStage = (stage: MainViewStage) => {
@@ -72,12 +77,14 @@ function MainView(): JSX.Element {
   const updateAccountData = async () => {
     const userResult = await restApiClient().getUserAccount();
     const groupsResult = await restApiClient().getSubscriptionGroups();
-    const results = [userResult, groupsResult];
+    const teacherssResult = await restApiClient().getSubscriptionTeachers();
+    const results = [userResult, groupsResult, teacherssResult];
     if (results.every(value => value.status === SimpleStatus.OK)) {
       setState({
         ...state,
         account: userResult.value,
         groups: groupsResult.value,
+        teachers: teacherssResult.value,
         stage: MainViewStage.LOADED,
       });
     } else if (results.some(value => value.status === SimpleStatus.FORBIDDEN)) {
@@ -95,11 +102,19 @@ function MainView(): JSX.Element {
     });
   };
 
+  const updateEditedSubscription = (id: string) => {
+    setState({
+      ...state,
+      editedSubscription: id,
+      stage: MainViewStage.EDIT_SUBSCRIPTION,
+    });
+  };
+
   interface CCData {
     id: string;
     name: string;
     recipient: string | null;
-    enabled: boolean;
+    readonly: boolean;
   }
 
   const getChannelsArray = (): CCData[] => {
@@ -110,6 +125,12 @@ function MainView(): JSX.Element {
       result.push(
         getChannelData('telegram', Message.TEXT_CC_TELEGRAM, ccs.telegram),
       );
+      result.push({
+        id: 'email',
+        name: Message.TEXT_CC_EMAIL,
+        recipient: state.account == null ? '' : state.account.email,
+        readonly: true,
+      });
     }
     return result;
   };
@@ -120,12 +141,11 @@ function MainView(): JSX.Element {
     cc: CommunicationChannel,
   ): CCData => {
     const recipient = cc == null || cc.recipient == null ? null : cc.recipient;
-    const enabled = cc == null || cc.active == null ? false : cc.active;
     return {
       id: id,
       name: name,
       recipient: recipient,
-      enabled: enabled,
+      readonly: false,
     };
   };
 
@@ -139,56 +159,87 @@ function MainView(): JSX.Element {
     throw new Error('communication channel data not found');
   };
 
-  const getGroups = (): {key: string; value: string}[] => {
-    const groups = state.groups.map(extractGroupItem);
-    groups.unshift(createDefaultGroupItem());
-    return groups;
+  interface SubscriptionData {
+    id: string;
+    name: string;
+    options: string[];
+    selectedOption: string | null;
+    channels: string[];
+    selectedChannels: string[];
+  }
+
+  const defaultChannels = (): string[] => {
+    return ['vk', 'telegram', 'email'];
   };
 
-  const extractGroupItem = (
-    group: string,
-    index: number,
-  ): {key: string; value: string} => {
-    return {
-      key: (index + 1).toString(),
-      value: group,
-    };
+  const getSubscriptionData = (): SubscriptionData[] => {
+    const account = state.account;
+    const result = [];
+    result.push({
+      id: 'group',
+      name: Message.TEXT_SUB_GROUP,
+      options: state.groups,
+      selectedOption: account == null ? null : account.subscriptions.group.name,
+      channels: defaultChannels(),
+      selectedChannels:
+        account == null ? [] : account.subscriptions.group.channels,
+    });
+    result.push({
+      id: 'teacher',
+      name: Message.TEXT_SUB_TEACHER,
+      options: state.teachers,
+      selectedOption:
+        account == null ? null : account.subscriptions.teacher.name,
+      channels: defaultChannels(),
+      selectedChannels:
+        account == null ? [] : account.subscriptions.teacher.channels,
+    });
+    return result;
   };
 
-  const createDefaultGroupItem = (): {key: string; value: string} => {
-    return {key: '0', value: Message.NO_SUBSCRIPTION};
-  };
-
-  const getSelectedGroup = (): {key: string; value: string} => {
-    if (state.account != null) {
-      const selectedGroup = state.account?.subscriptions.group.name;
-      const foundGroup = getGroups().find(
-        group => group.value === selectedGroup,
-      );
-      if (foundGroup != null) {
-        return foundGroup;
+  const getEditSubscriptionData = (): SubscriptionData => {
+    const sArray = getSubscriptionData();
+    for (let i = 0; i < sArray.length; i++) {
+      if (sArray[i].id === state.editedSubscription) {
+        return sArray[i];
       }
     }
-    return createDefaultGroupItem();
+    throw new Error('subscription data not found');
   };
 
-  const handleSelectedGroupChanged = async (key: string) => {
-    const fv = getGroups().find(v => v.key === key);
-    const value = fv == null ? null : fv.value;
-    const name = value === createDefaultGroupItem().value ? null : value;
-    if (
-      state.account != null &&
-      state.account.subscriptions.group.name === name
-    ) {
-      return;
-    }
-    const status = await restApiClient().subscribeToNotifications(
-      'group',
-      name,
-    );
+  const getSelectedSubscriptionOption = (
+    array: string[],
+    name: string | null,
+  ): string => {
+    return name !== null && array.indexOf(name) !== -1
+      ? name
+      : Message.NO_SUBSCRIPTION;
+  };
+
+  const handleSubscriptionChanged = async (
+    type: string,
+    name: string | null,
+    channels: string[],
+  ) => {
+    const status = await restApiClient().subscribeToNotifications(type, name);
+    handleResponseStatus(status, async () => {
+      const stts = await restApiClient().updateSubscriptionChannels(
+        type,
+        channels,
+      );
+      handleResponseStatus(stts, () => setStage(MainViewStage.LOADING));
+    });
+  };
+
+  type SuccessCallback = () => void;
+
+  const handleResponseStatus = (
+    status: SimpleStatus,
+    callback: SuccessCallback,
+  ) => {
     switch (status) {
       case SimpleStatus.OK:
-        setStage(MainViewStage.LOADING);
+        callback();
         break;
       case SimpleStatus.FORBIDDEN:
         setStage(MainViewStage.REQUIRE_AUTH);
@@ -201,70 +252,63 @@ function MainView(): JSX.Element {
 
   const mainView = (): JSX.Element => {
     return (
-      <SafeAreaView>
-        {debugView()}
-        <Text style={styles.sectionText}>
-          {Message.TITLE_GROUP_SUBSCRIPTION}
-        </Text>
-        <View style={styles.paddingContainer}>
-          <SelectList
-            save="key"
-            data={getGroups()}
-            setSelected={handleSelectedGroupChanged}
-            defaultOption={getSelectedGroup()}
-            searchPlaceholder={Message.PLACEHOLDER_SEARCH}
+      <SafeAreaView style={styles.centeringContainer}>
+        <View>
+          {debugView()}
+          <Text style={styles.sectionText}>{Message.TITLE_SUBSCRIPTIONS}</Text>
+          <FlatList
+            data={getSubscriptionData()}
+            extraData={state}
+            renderItem={({item}) => (
+              <CCItem
+                id={item.id}
+                name={item.name}
+                recipient={getSelectedSubscriptionOption(
+                  item.id === 'group' ? state.groups : state.teachers,
+                  item.selectedOption,
+                )}
+                readonly={false}
+                addCallback={value => updateEditedSubscription(value)}
+                editCallback={value => updateEditedSubscription(value)}
+              />
+            )}
+            keyExtractor={item => item.id}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
           />
-        </View>
-        <Text style={styles.sectionText}>
-          {Message.TITLE_COMMUNICATION_CHANNELS}
-        </Text>
-        <FlatList
-          data={getChannelsArray()}
-          extraData={state}
-          renderItem={({item}) => (
-            <CCItem
-              id={item.id}
-              name={item.name}
-              recipient={item.recipient}
-              enabled={item.enabled}
-              setActiveCallback={async (id, active) => {
-                const status = await restApiClient().updateChannelActive(
-                  id,
-                  active,
-                );
-                switch (status) {
-                  case SimpleStatus.OK:
-                    setStage(MainViewStage.LOADING);
-                    break;
-                  case SimpleStatus.FORBIDDEN:
-                    setStage(MainViewStage.REQUIRE_AUTH);
-                    break;
-                  case SimpleStatus.ERROR:
-                  default:
-                    showToast(Message.TEXT_ERROR);
-                }
-              }}
-              addCallback={value => updateEditedChannel(value)}
-              editCallback={value => updateEditedChannel(value)}
-            />
-          )}
-          keyExtractor={item => item.id}
-          ItemSeparatorComponent={() => <View style={styles.separator} />}
-        />
-        <View style={styles.bottomButtonContainer}>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => setStage(MainViewStage.LOADING)}>
-            <Text>{Message.BUTTON_UPDATE}</Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={styles.button}
-            onPress={() => {
-              restApiClient().clearToken();
-              setStage(MainViewStage.REQUIRE_AUTH);
-            }}>
-            <Text>{Message.BUTTON_LOGOUT}</Text>
-          </TouchableOpacity>
+          <Text style={styles.sectionText}>
+            {Message.TITLE_COMMUNICATION_CHANNELS}
+          </Text>
+          <FlatList
+            data={getChannelsArray()}
+            extraData={state}
+            renderItem={({item}) => (
+              <CCItem
+                id={item.id}
+                name={item.name}
+                recipient={item.recipient}
+                readonly={item.readonly}
+                addCallback={value => updateEditedChannel(value)}
+                editCallback={value => updateEditedChannel(value)}
+              />
+            )}
+            keyExtractor={item => item.id}
+            ItemSeparatorComponent={() => <View style={styles.separator} />}
+          />
+          <View style={styles.bottomButtonContainer}>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => setStage(MainViewStage.LOADING)}>
+              <Text>{Message.BUTTON_UPDATE}</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              style={styles.button}
+              onPress={() => {
+                restApiClient().clearToken();
+                setStage(MainViewStage.REQUIRE_AUTH);
+              }}>
+              <Text>{Message.BUTTON_LOGOUT}</Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </SafeAreaView>
     );
@@ -321,6 +365,28 @@ function MainView(): JSX.Element {
             }
           }}
           successCallback={updateEmail}
+        />
+      </SafeAreaView>
+    );
+  };
+
+  const editSubscriptionView = (
+    subscriptionData: SubscriptionData,
+  ): JSX.Element => {
+    return (
+      <SafeAreaView style={styles.centeringContainer}>
+        <SubscriptionView
+          title={subscriptionData.name}
+          options={subscriptionData.options}
+          selectedOption={subscriptionData.selectedOption}
+          channels={subscriptionData.channels}
+          selectedChannels={subscriptionData.selectedChannels}
+          updateCallback={(option, channels) => {
+            handleSubscriptionChanged(subscriptionData.id, option, channels);
+          }}
+          exitCallback={() => {
+            setStage(MainViewStage.LOADING);
+          }}
         />
       </SafeAreaView>
     );
@@ -504,6 +570,8 @@ function MainView(): JSX.Element {
     return noNetworkView();
   } else if (state.stage === MainViewStage.EDIT_COMMUNICATION) {
     return editCCView(getEditChannelData());
+  } else if (state.stage === MainViewStage.EDIT_SUBSCRIPTION) {
+    return editSubscriptionView(getEditSubscriptionData());
   } else {
     return mainView();
   }

@@ -1,10 +1,10 @@
 class NotificationSubscription {
-  type: string;
   name: string;
+  channels: string[];
 
-  constructor(type: string, name: string) {
-    this.type = type;
+  constructor(name: string, channels: string[]) {
     this.name = name;
+    this.channels = channels;
   }
 }
 

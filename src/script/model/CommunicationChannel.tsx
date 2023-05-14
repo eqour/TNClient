@@ -1,12 +1,8 @@
 class CommunicationChannel {
-  type: string;
   recipient: string;
-  active: boolean;
 
-  constructor(type: string, recipient: string, active: boolean) {
-    this.type = type;
+  constructor(recipient: string) {
     this.recipient = recipient;
-    this.active = active;
   }
 }
 

@@ -10,10 +10,12 @@ enum Message {
   NO_NETWORK_CONNECTION = 'Отсутствует подключение к сети',
   BUTTON_RECONNECT = 'Обновить',
   NO_SUBSCRIPTION = 'Нет подписки',
-  TITLE_GROUP_SUBSCRIPTION = 'Подписка на изменение расписания в группе',
+  TITLE_SUBSCRIPTIONS = 'Подписки на изменения в расписании',
+  TITLE_SUBSCRIPTION = 'Подписка на изменения в расписании',
   TITLE_COMMUNICATION_CHANNELS = 'Способы отправки оповещений',
   TEXT_CC_VK = 'ВКонтакте',
   TEXT_CC_TELEGRAM = 'Telegram',
+  TEXT_CC_EMAIL = 'Эл. почта',
   BUTTON_UPDATE = 'Обновить',
   BUTTON_LOGOUT = 'Выйти из системы',
   TITLE_LOGIN = 'Вход',
@@ -24,6 +26,9 @@ enum Message {
   PLACEHOLDER_TG_ID = 'Telegram ID',
   PLACEHOLDER_SEARCH = 'Поиск',
   BUTTON_UNDERSTAND = 'Понятно',
+  TEXT_SUB_GROUP = 'Группа',
+  TEXT_SUB_TEACHER = 'Преподаватель',
+  BUTTON_APPLY = 'Применить',
 }
 
 export default Message;

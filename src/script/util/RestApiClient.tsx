@@ -176,15 +176,15 @@ async function updateChannelRecipient(
   }
 }
 
-async function updateChannelActive(
-  channelId: string,
-  active: boolean,
+async function updateSubscriptionChannels(
+  subscriptionType: string,
+  channels: string[],
   token: string,
 ): Promise<SimpleStatus> {
   try {
     const response = await makeRequest(
-      'communication-channels/' + channelId + '/active',
-      {active: active},
+      'subscriptions/' + subscriptionType + '/channels',
+      {channels: channels},
       RequestMethod.PUT,
       token,
     );
@@ -200,12 +200,13 @@ async function updateChannelActive(
   }
 }
 
-async function getSubscriptionGroups(
+async function getSubscriptions(
+  subscriptionType: string,
   token: string,
 ): Promise<SimpleResponse<string[], SimpleStatus>> {
   try {
     const response = await makeRequest(
-      'subscriptions/group',
+      'subscriptions/' + subscriptionType,
       null,
       RequestMethod.GET,
       token,
@@ -344,17 +345,27 @@ class RestApiClient {
     );
   }
 
-  async updateChannelActive(
-    channelId: string,
-    active: boolean,
+  async updateSubscriptionChannels(
+    subscriptionType: string,
+    channels: string[],
   ): Promise<SimpleStatus> {
-    return updateChannelActive(channelId, active, await this.getToken());
+    return updateSubscriptionChannels(
+      subscriptionType,
+      channels,
+      await this.getToken(),
+    );
   }
 
   async getSubscriptionGroups(): Promise<
     SimpleResponse<string[], SimpleStatus>
   > {
-    return getSubscriptionGroups(await this.getToken());
+    return getSubscriptions('group', await this.getToken());
+  }
+
+  async getSubscriptionTeachers(): Promise<
+    SimpleResponse<string[], SimpleStatus>
+  > {
+    return getSubscriptions('teacher', await this.getToken());
   }
 
   async subscribeToNotifications(
