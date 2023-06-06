@@ -70,24 +70,6 @@ async function login(email: string, code: string): Promise<LoginResult> {
   }
 }
 
-async function hello(token: string): Promise<string> {
-  try {
-    const response = await makeRequest(
-      'hello-world',
-      null,
-      RequestMethod.POST,
-      token,
-    );
-    if (response.status === 200) {
-      return await response.json();
-    } else {
-      return 'not 200';
-    }
-  } catch (error) {
-    return 'error';
-  }
-}
-
 enum SimpleStatus {
   OK,
   ERROR,
@@ -309,10 +291,6 @@ class RestApiClient {
       this.setToken(result.token);
     }
     return result.status;
-  }
-
-  async hello(): Promise<string> {
-    return hello(await this.getToken());
   }
 
   async getUserAccount(): Promise<
