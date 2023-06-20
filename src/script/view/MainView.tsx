@@ -9,6 +9,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Linking,
+  TextInput,
 } from 'react-native';
 import Message from '../constant/Message';
 import CommunicationChannel from '../model/CommunicationChannel';
@@ -39,6 +40,8 @@ function MainView(): JSX.Element {
     EDIT_COMMUNICATION,
     EDIT_SUBSCRIPTION,
   }
+
+  const [host, setHost] = useState(restApiClient().getHostString());
 
   interface StateData {
     stage: MainViewStage;
@@ -75,6 +78,10 @@ function MainView(): JSX.Element {
   });
 
   const updateAccountData = async () => {
+    if (!restApiClient().hasHost()) {
+      setStage(MainViewStage.NO_NETWORK_CONNECTION);
+      return;
+    }
     const userResult = await restApiClient().getUserAccount();
     const groupsResult = await restApiClient().getSubscriptionGroups();
     const teacherssResult = await restApiClient().getSubscriptionTeachers();
@@ -503,9 +510,18 @@ function MainView(): JSX.Element {
     return (
       <SafeAreaView style={[styles.centeringContainer, styles.networkView]}>
         <Text>{Message.NO_NETWORK_CONNECTION}</Text>
+        <TextInput
+          placeholder={Message.PLACEHOLDER_HOST}
+          style={styles.textField}
+          onChangeText={value => setHost(value)}
+          value={host}
+        />
         <TouchableOpacity
           style={styles.button}
-          onPress={() => setStage(MainViewStage.LOADING)}>
+          onPress={() => {
+            restApiClient().setHost(host);
+            setStage(MainViewStage.LOADING);
+          }}>
           <Text>{Message.BUTTON_RECONNECT}</Text>
         </TouchableOpacity>
       </SafeAreaView>
@@ -559,6 +575,13 @@ function MainView(): JSX.Element {
     },
     dropdownBox: {
       borderRadius: 0,
+    },
+    textField: {
+      height: 40,
+      padding: 10,
+      width: '70%',
+      textAlign: 'center',
+      borderWidth: 1,
     },
   });
 

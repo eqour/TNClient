@@ -1,8 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import UserAccount from '../model/UserAccount';
 
-const host: string = 'http://194.67.206.117:8085/api/v1/';
-
 function isBadAuthStatus(status: number): boolean {
   return status === 401 || status === 403;
 }
@@ -230,6 +228,8 @@ async function subscribeToNotification(
   }
 }
 
+let customHost: string | null = null;
+
 async function makeRequest(
   url: string,
   body: any,
@@ -241,7 +241,7 @@ async function makeRequest(
   );
   const controller = new AbortController();
   const id = setTimeout(() => controller.abort(), 10000);
-  const response = await fetch(host + url, {
+  const response = await fetch('http://' + getHost() + '/api/v1/' + url, {
     method: method,
     headers: {
       'Content-Type': 'application/json',
@@ -254,6 +254,10 @@ async function makeRequest(
   return response;
 }
 
+function getHost(): string {
+  return customHost == null ? '' : customHost;
+}
+
 let client: RestApiClient | null = null;
 
 function restApiClient(): RestApiClient {
@@ -264,6 +268,18 @@ function restApiClient(): RestApiClient {
 }
 
 class RestApiClient {
+  setHost(newHost: string) {
+    customHost = newHost;
+  }
+
+  hasHost(): boolean {
+    return customHost != null;
+  }
+
+  getHostString(): string {
+    return customHost == null ? '' : customHost;
+  }
+
   async getToken(): Promise<string> {
     const storageToken = await AsyncStorage.getItem('token');
     return storageToken == null ? '' : storageToken;

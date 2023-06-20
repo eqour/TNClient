@@ -29,6 +29,7 @@ enum Message {
   TEXT_SUB_GROUP = 'Группа',
   TEXT_SUB_TEACHER = 'Преподаватель',
   BUTTON_APPLY = 'Применить',
+  PLACEHOLDER_HOST = 'Адрес сервера',
 }
 
 export default Message;
